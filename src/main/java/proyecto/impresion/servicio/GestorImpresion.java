@@ -57,7 +57,7 @@ public class GestorImpresion {
         if (tipoUsuario == null) {
             throw new IllegalArgumentException("Debe seleccionar un tipo de usuario");
         }
-        String clave = identificador.trim().toLowerCase();
+        String clave = normalizarIdentificador(identificador);
         if (usuarios.contieneClave(clave)) {
             throw new IllegalArgumentException("El usuario ya existe");
         }
@@ -221,14 +221,21 @@ public class GestorImpresion {
      * @return true si se eliminó correctamente.
      */
     public boolean eliminarDocumentoEnColaPorUsuario(String usuarioId, String nombreDocumento) {
-        ListaEnlazada<RegistroUsuarioCola> lista = registrosColaPorUsuario.obtener(usuarioId.trim().toLowerCase());
+        validarIdentificador(usuarioId);
+        if (nombreDocumento == null || nombreDocumento.isBlank()) {
+            return false;
+        }
+
+        ListaEnlazada<RegistroUsuarioCola> lista = registrosColaPorUsuario.obtener(normalizarIdentificador(usuarioId));
         if (lista == null) {
             return false;
         }
 
+        String nombreDocumentoNormalizado = nombreDocumento.trim();
+
         for (RegistroUsuarioCola registroUsuario : lista) {
             if (registroUsuario.estaActivo()
-                    && registroUsuario.obtenerNombreDocumento().equalsIgnoreCase(nombreDocumento.trim())) {
+                    && registroUsuario.obtenerNombreDocumento().equalsIgnoreCase(nombreDocumentoNormalizado)) {
                 boolean eliminado = colaImpresion.forzarPrioridadMaximaYEliminar(registroUsuario.obtenerIdRegistro());
                 if (eliminado) {
                     registroUsuario.marcarActivo(false);
@@ -253,7 +260,7 @@ public class GestorImpresion {
         if (identificador == null) {
             return null;
         }
-        return usuarios.obtener(identificador.trim().toLowerCase());
+        return usuarios.obtener(normalizarIdentificador(identificador));
     }
 
     /**
@@ -299,7 +306,11 @@ public class GestorImpresion {
      */
     public ListaEnlazada<RegistroUsuarioCola> obtenerRegistrosActivosPorUsuario(String usuarioId) {
         ListaEnlazada<RegistroUsuarioCola> activos = new ListaEnlazada<>();
-        ListaEnlazada<RegistroUsuarioCola> registros = registrosColaPorUsuario.obtener(usuarioId.trim().toLowerCase());
+        if (usuarioId == null || usuarioId.isBlank()) {
+            return activos;
+        }
+
+        ListaEnlazada<RegistroUsuarioCola> registros = registrosColaPorUsuario.obtener(normalizarIdentificador(usuarioId));
         if (registros == null) {
             return activos;
         }
@@ -326,7 +337,7 @@ public class GestorImpresion {
     }
 
     private void registrarDocumentoEnHashUsuario(String usuarioId, RegistroImpresion registro, Documento documento) {
-        String clave = usuarioId.trim().toLowerCase();
+        String clave = normalizarIdentificador(usuarioId);
         ListaEnlazada<RegistroUsuarioCola> lista = registrosColaPorUsuario.obtener(clave);
         if (lista == null) {
             lista = new ListaEnlazada<>();
@@ -351,6 +362,10 @@ public class GestorImpresion {
         if (identificador == null || identificador.isBlank()) {
             throw new IllegalArgumentException("El identificador de usuario es obligatorio");
         }
+    }
+
+    private String normalizarIdentificador(String identificador) {
+        return identificador.trim().toLowerCase();
     }
 
     private Usuario exigirUsuario(String usuarioId) {
