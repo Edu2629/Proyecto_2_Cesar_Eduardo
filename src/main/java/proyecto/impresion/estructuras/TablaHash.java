@@ -148,7 +148,7 @@ public class TablaHash<K, V> {
     private int indiceDe(K clave, int longitud) {
         int hash = clave.hashCode();
         hash ^= (hash >>> 16);
-        return Math.abs(hash) % longitud;
+        return Math.floorMod(hash, longitud);
     }
 
     @SuppressWarnings("unchecked")
